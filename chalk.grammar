@@ -1,6 +1,28 @@
-program
+program -> statements
+
+statements
+  -> _ statement _ {% 
+      data => [data[0]]
+  %}
+  | _ statement _ "\n" statements {%
+      data => [data[0], ...data[4]]
+  %}
+
+statement
   -> var_assignment {% id %}
   | print_statement {% id %}
+  | while_loop {% id %}
+  | expression {% id %}
+
+while_loop -> "while" __ binary_expression _ ":" _ "\n" statements {% 
+    data => {
+      return {
+        type: "while_loop",
+        condition: data[2],
+        body: data[8]
+      }
+    }
+  %}
 
 print_statement -> "log" __ expression {% 
     data => {
@@ -38,8 +60,14 @@ operator
   | "/"  {% id %}
   | "%"  {% id %}
   | "**" {% id %}
+  | "==" {% id %}
+  | "!=" {% id %}
+  | "<" {% id %}
+  | ">" {% id %}
+  | "<=" {% id %}
+  | ">=" {% id %}
 
-var_assignment -> var_statement __ identifier _ "=" _ expression {%
+var_assignment -> var_type __ identifier _ "=" _ expression {%
     data => {
       return {
         type: "var_assignment",
@@ -50,7 +78,7 @@ var_assignment -> var_statement __ identifier _ "=" _ expression {%
     }
   %}
 
-var_statement 
+var_type 
   -> "int"  {% id %}
   | "float"  {% id %}
   | "string"  {% id %}

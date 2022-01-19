@@ -5,8 +5,27 @@ function id(x) { return x[0]; }
 var grammar = {
     Lexer: undefined,
     ParserRules: [
-    {"name": "program", "symbols": ["var_assignment"], "postprocess": id},
-    {"name": "program", "symbols": ["print_statement"], "postprocess": id},
+    {"name": "program", "symbols": ["statements"]},
+    {"name": "statements", "symbols": ["_", "statement", "_"], "postprocess":  
+        data => [data[0]]
+          },
+    {"name": "statements", "symbols": ["_", "statement", "_", {"literal":"\n"}, "statements"], "postprocess": 
+        data => [data[0], ...data[4]]
+          },
+    {"name": "statement", "symbols": ["var_assignment"], "postprocess": id},
+    {"name": "statement", "symbols": ["print_statement"], "postprocess": id},
+    {"name": "statement", "symbols": ["while_loop"], "postprocess": id},
+    {"name": "statement", "symbols": ["expression"], "postprocess": id},
+    {"name": "while_loop$string$1", "symbols": [{"literal":"w"}, {"literal":"h"}, {"literal":"i"}, {"literal":"l"}, {"literal":"e"}], "postprocess": function joiner(d) {return d.join('');}},
+    {"name": "while_loop", "symbols": ["while_loop$string$1", "__", "binary_expression", "_", {"literal":":"}, "_", {"literal":"\n"}, "statements"], "postprocess":  
+        data => {
+          return {
+            type: "while_loop",
+            condition: data[2],
+            body: data[8]
+          }
+        }
+          },
     {"name": "print_statement$string$1", "symbols": [{"literal":"l"}, {"literal":"o"}, {"literal":"g"}], "postprocess": function joiner(d) {return d.join('');}},
     {"name": "print_statement", "symbols": ["print_statement$string$1", "__", "expression"], "postprocess":  
         data => {
@@ -37,7 +56,17 @@ var grammar = {
     {"name": "operator", "symbols": [{"literal":"%"}], "postprocess": id},
     {"name": "operator$string$1", "symbols": [{"literal":"*"}, {"literal":"*"}], "postprocess": function joiner(d) {return d.join('');}},
     {"name": "operator", "symbols": ["operator$string$1"], "postprocess": id},
-    {"name": "var_assignment", "symbols": ["var_statement", "__", "identifier", "_", {"literal":"="}, "_", "expression"], "postprocess": 
+    {"name": "operator$string$2", "symbols": [{"literal":"="}, {"literal":"="}], "postprocess": function joiner(d) {return d.join('');}},
+    {"name": "operator", "symbols": ["operator$string$2"], "postprocess": id},
+    {"name": "operator$string$3", "symbols": [{"literal":"!"}, {"literal":"="}], "postprocess": function joiner(d) {return d.join('');}},
+    {"name": "operator", "symbols": ["operator$string$3"], "postprocess": id},
+    {"name": "operator", "symbols": [{"literal":"<"}], "postprocess": id},
+    {"name": "operator", "symbols": [{"literal":">"}], "postprocess": id},
+    {"name": "operator$string$4", "symbols": [{"literal":"<"}, {"literal":"="}], "postprocess": function joiner(d) {return d.join('');}},
+    {"name": "operator", "symbols": ["operator$string$4"], "postprocess": id},
+    {"name": "operator$string$5", "symbols": [{"literal":">"}, {"literal":"="}], "postprocess": function joiner(d) {return d.join('');}},
+    {"name": "operator", "symbols": ["operator$string$5"], "postprocess": id},
+    {"name": "var_assignment", "symbols": ["var_type", "__", "identifier", "_", {"literal":"="}, "_", "expression"], "postprocess": 
         data => {
           return {
             type: "var_assignment",
@@ -47,12 +76,12 @@ var grammar = {
           }
         }
           },
-    {"name": "var_statement$string$1", "symbols": [{"literal":"i"}, {"literal":"n"}, {"literal":"t"}], "postprocess": function joiner(d) {return d.join('');}},
-    {"name": "var_statement", "symbols": ["var_statement$string$1"], "postprocess": id},
-    {"name": "var_statement$string$2", "symbols": [{"literal":"f"}, {"literal":"l"}, {"literal":"o"}, {"literal":"a"}, {"literal":"t"}], "postprocess": function joiner(d) {return d.join('');}},
-    {"name": "var_statement", "symbols": ["var_statement$string$2"], "postprocess": id},
-    {"name": "var_statement$string$3", "symbols": [{"literal":"s"}, {"literal":"t"}, {"literal":"r"}, {"literal":"i"}, {"literal":"n"}, {"literal":"g"}], "postprocess": function joiner(d) {return d.join('');}},
-    {"name": "var_statement", "symbols": ["var_statement$string$3"], "postprocess": id},
+    {"name": "var_type$string$1", "symbols": [{"literal":"i"}, {"literal":"n"}, {"literal":"t"}], "postprocess": function joiner(d) {return d.join('');}},
+    {"name": "var_type", "symbols": ["var_type$string$1"], "postprocess": id},
+    {"name": "var_type$string$2", "symbols": [{"literal":"f"}, {"literal":"l"}, {"literal":"o"}, {"literal":"a"}, {"literal":"t"}], "postprocess": function joiner(d) {return d.join('');}},
+    {"name": "var_type", "symbols": ["var_type$string$2"], "postprocess": id},
+    {"name": "var_type$string$3", "symbols": [{"literal":"s"}, {"literal":"t"}, {"literal":"r"}, {"literal":"i"}, {"literal":"n"}, {"literal":"g"}], "postprocess": function joiner(d) {return d.join('');}},
+    {"name": "var_type", "symbols": ["var_type$string$3"], "postprocess": id},
     {"name": "identifier$ebnf$1", "symbols": [/[a-z]/]},
     {"name": "identifier$ebnf$1", "symbols": ["identifier$ebnf$1", /[a-z]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "identifier", "symbols": ["identifier$ebnf$1"], "postprocess": id},
