@@ -1,0 +1,78 @@
+program
+  -> var_assignment {% id %}
+  | print_statement {% id %}
+
+print_statement -> "log" __ expression {% 
+    data => {
+      return {
+        type: "print_statement",
+        expression: data[2]
+      }
+    }
+  %}
+
+expression
+  -> unary_expression {% id %}
+  | binary_expression {% id %}
+
+unary_expression
+  -> number {% id %}
+  | identifier {% id %}
+
+binary_expression
+  -> unary_expression _ operator _ expression {%
+    data => {
+      return {
+        type: "binary_expression",
+        left: data[0],
+        operator: data[2],
+        right: data[4]
+      }
+    }
+  %}
+
+operator 
+  -> "+"  {% id %}
+  | "-"  {% id %}
+  | "*"  {% id %}
+  | "/"  {% id %}
+  | "%"  {% id %}
+  | "**" {% id %}
+
+var_assignment -> var_statement __ identifier _ "=" _ expression {%
+    data => {
+      return {
+        type: "var_assignment",
+        var_type: data[0],
+        varname: data[2],
+        value: data[6]
+      }
+    }
+  %}
+
+var_statement 
+  -> "int"  {% id %}
+  | "float"  {% id %}
+  | "string"  {% id %}
+
+identifier -> [a-z]:+ {% id %}
+
+number
+  -> integer {% id %}
+  | float {% id %}
+
+float -> integer "." integer {%
+      data => Number(data[0] + "." + data[2]) 
+  %}
+
+integer -> digits {% 
+    data => Number(data[0])
+ %}
+
+digits -> [0-9]:+ {%
+      data => data[0].join("")
+  %}
+
+_ -> [ ]:*
+
+__ -> [ ]:+
