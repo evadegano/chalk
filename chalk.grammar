@@ -1,5 +1,7 @@
-program
-  -> object
+input
+  -> object {% id %}
+  | binary_expression {% id %}
+  | statements
 
 statements
   -> _ statement _ {% 
@@ -11,52 +13,8 @@ statements
 
 statement
   -> var_assignment {% id %}
-  | print_statement {% id %}
-  | while_loop {% id %}
-  | expression {% id %}
 
-while_loop -> "while" __ binary_expression _ ":" _ "\n" statements {% 
-    data => {
-      return {
-        type: "while_loop",
-        condition: data[2],
-        body: data[8]
-      }
-    }
-  %}
-
-print_statement -> "log" __ expression {% 
-    data => {
-      return {
-        type: "print_statement",
-        expression: data[2]
-      }
-    }
-  %}
-
-expression
-  -> unary_expression {% id %}
-  | binary_expression {% id %}
-
-unary_expression
-  -> number {% id %}
-  | identifier {% id %}
-
-binary_expression
-  -> unary_expression _ operator _ expression {%
-    data => {
-      return {
-        type: "binary_expression",
-        left: data[0],
-        operator: data[2],
-        right: data[4]
-      }
-    }
-  %}
-
-
-
-var_assignment -> var_type __ identifier _ "=" _ expression {%
+var_assignment -> var_type __ var_identifier _ "=" _ object {%
     data => {
       return {
         type: "var_assignment",
@@ -71,17 +29,59 @@ var_type
   -> "int"  {% id %}
   | "float"  {% id %}
   | "string"  {% id %}
+  | "array" {% id %}
+  | "dict" {% id %}
 
-identifier -> [a-z]:+ {% id %}
+var_identifier -> [A-z]:+ {% id %}
 
-operator 
-  -> "+"  {% id %}
-  | "-"  {% id %}
-  | "*"  {% id %}
-  | "/"  {% id %}
-  | "%"  {% id %}
-  | "**" {% id %}
-  | "==" {% id %}
+binary_expression
+  -> additive
+  | multiplicative
+
+additive
+  -> multiplicative {% id %}
+  | multiplicative _ [+-] _ additive {% 
+      data => {
+        switch (data[2]) {
+          case "+":
+            return data[0] + data[4];
+          case "-":
+            return data[0] - data[4];
+        }
+      } 
+    %}
+
+multiplicative
+  -> unary_expression {% id %}
+  | unary_expression _ [*/%] _ multiplicative {% 
+      data => {
+        switch (data[2]) {
+          case "*":
+            return data[0] * data[4];
+          case "/":
+            return data[0] / data[4];
+          case "%":
+            return data[0] % data[4];
+          case "^":
+            return data[0] ** data[4];
+        }
+      } 
+    %}
+
+unary_expression
+  -> number {% id %}
+  | "(" _ additive _ ")" {% data => data[2] %}
+
+assignment_operator 
+  -> "+" {% id %}
+  | "-" {% id %}
+  | "*" {% id %}
+  | "/" {% id %}
+  | "^" {% id %}
+  | "%" {% id %}
+
+comparison_operator
+  -> "==" {% id %}
   | "!=" {% id %}
   | "<" {% id %}
   | ">" {% id %}
@@ -89,33 +89,65 @@ operator
   | ">=" {% id %}
 
 object
-  -> simple_object
-  | complex_object
-
-complex_object
-  -> array
-  | dictionnary
-
-dictionnary
-  -> "{" "}"
+  -> simple_object {% id %}
+  | array {% id %}
 
 array 
-  -> "[" "]"
-  | "[" array_items "]"
+  -> "[" _ "]" {% () => [] %}
+  | "[" _ array_items _ "]" {% data => "[" + data[2] + "]" %}
 
 array_items
-  -> simple_object
-  | simple_object "," array_items
+  -> simple_object {% id %}
+  | simple_object "," _ array_items {% data => [data[0] + "," + " " + data[3]] %}
 
 simple_object
-  -> number
-  | boolean
-  | myNull
-  | string
+  -> number {% id %}
+  | boolean {% id %}
+  | myNull {% id %}
+  | string {% id %}
 
-string -> "\"" character:+ "\""
+string -> "\"" character:+ "\""  {% data => "\"" + data[1].join("") + "\"" %}
 
-character -> [^\"]
+character 
+  -> [^\"\\] {% id %}
+  | "\\" escape {% data => data[1] %}
+
+escape
+  -> "\"" {% () => '"' %}
+  | "\\" {% () => "\\" %}
+  | "/" {% () => "/" %}
+  | "b" {% () => "\b" %}
+  | "f" {% () => "\f" %}
+  | "n" {% () => "\n" %}
+  | "r" {% () => "\r" %}
+  | "t" {% () => "\t" %}
+  | "u" hex hex hex hex {%
+      data => {
+        const code = parseInt(data.splice(1).join(""), 16);
+        return String.fromCharCode(code);
+      }
+    %}
+
+hex
+  -> digit {% data => Number(data[0]) %}
+  | [a-fA-F] {%
+      data => {
+        switch (data[0].toLowerCase()) {
+          case "a":
+            return 10;
+          case "b":
+            return 11;
+          case "c":
+            return 12;
+          case "d":
+            return 13;
+          case "e":
+            return 14;
+          case "f":
+            return 15;
+        }
+      }
+    %}
 
 myNull -> "null"
 
@@ -127,13 +159,11 @@ number
   -> integer {% id %}
   | float {% id %}
 
-float -> integer "." integer 
+float -> integer "." integer {% data => data[0] + "." + data[2] %}
 
-integer -> digit:+ {% 
-    data => data[0].join("")
-  %}
+integer -> digit:+ {% data => Number(data[0].join("")) %}
 
-digit -> [0-9]
+digit -> [0-9] {% id %}
 
 _ -> [ ]:*
 
