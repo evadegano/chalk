@@ -1,4 +1,5 @@
-program -> statements
+program
+  -> object
 
 statements
   -> _ statement _ {% 
@@ -53,19 +54,7 @@ binary_expression
     }
   %}
 
-operator 
-  -> "+"  {% id %}
-  | "-"  {% id %}
-  | "*"  {% id %}
-  | "/"  {% id %}
-  | "%"  {% id %}
-  | "**" {% id %}
-  | "==" {% id %}
-  | "!=" {% id %}
-  | "<" {% id %}
-  | ">" {% id %}
-  | "<=" {% id %}
-  | ">=" {% id %}
+
 
 var_assignment -> var_type __ identifier _ "=" _ expression {%
     data => {
@@ -85,21 +74,66 @@ var_type
 
 identifier -> [a-z]:+ {% id %}
 
+operator 
+  -> "+"  {% id %}
+  | "-"  {% id %}
+  | "*"  {% id %}
+  | "/"  {% id %}
+  | "%"  {% id %}
+  | "**" {% id %}
+  | "==" {% id %}
+  | "!=" {% id %}
+  | "<" {% id %}
+  | ">" {% id %}
+  | "<=" {% id %}
+  | ">=" {% id %}
+
+object
+  -> simple_object
+  | complex_object
+
+complex_object
+  -> array
+  | dictionnary
+
+dictionnary
+  -> "{" "}"
+
+array 
+  -> "[" "]"
+  | "[" array_items "]"
+
+array_items
+  -> simple_object
+  | simple_object "," array_items
+
+simple_object
+  -> number
+  | boolean
+  | myNull
+  | string
+
+string -> "\"" character:+ "\""
+
+character -> [^\"]
+
+myNull -> "null"
+
+boolean
+  -> "true" {% () => true %}
+  | "false" {% () => false %}
+
 number
   -> integer {% id %}
   | float {% id %}
 
-float -> integer "." integer {%
-      data => Number(data[0] + "." + data[2]) 
+float -> integer "." integer 
+
+integer -> digit:+ {% 
+    data => data[0].join("")
   %}
 
-integer -> digits {% 
-    data => Number(data[0])
- %}
-
-digits -> [0-9]:+ {%
-      data => data[0].join("")
-  %}
+digit -> [0-9]
 
 _ -> [ ]:*
 

@@ -5,7 +5,7 @@ function id(x) { return x[0]; }
 var grammar = {
     Lexer: undefined,
     ParserRules: [
-    {"name": "program", "symbols": ["statements"]},
+    {"name": "program", "symbols": ["object"]},
     {"name": "statements", "symbols": ["_", "statement", "_"], "postprocess":  
         data => [data[0]]
           },
@@ -49,23 +49,6 @@ var grammar = {
           }
         }
           },
-    {"name": "operator", "symbols": [{"literal":"+"}], "postprocess": id},
-    {"name": "operator", "symbols": [{"literal":"-"}], "postprocess": id},
-    {"name": "operator", "symbols": [{"literal":"*"}], "postprocess": id},
-    {"name": "operator", "symbols": [{"literal":"/"}], "postprocess": id},
-    {"name": "operator", "symbols": [{"literal":"%"}], "postprocess": id},
-    {"name": "operator$string$1", "symbols": [{"literal":"*"}, {"literal":"*"}], "postprocess": function joiner(d) {return d.join('');}},
-    {"name": "operator", "symbols": ["operator$string$1"], "postprocess": id},
-    {"name": "operator$string$2", "symbols": [{"literal":"="}, {"literal":"="}], "postprocess": function joiner(d) {return d.join('');}},
-    {"name": "operator", "symbols": ["operator$string$2"], "postprocess": id},
-    {"name": "operator$string$3", "symbols": [{"literal":"!"}, {"literal":"="}], "postprocess": function joiner(d) {return d.join('');}},
-    {"name": "operator", "symbols": ["operator$string$3"], "postprocess": id},
-    {"name": "operator", "symbols": [{"literal":"<"}], "postprocess": id},
-    {"name": "operator", "symbols": [{"literal":">"}], "postprocess": id},
-    {"name": "operator$string$4", "symbols": [{"literal":"<"}, {"literal":"="}], "postprocess": function joiner(d) {return d.join('');}},
-    {"name": "operator", "symbols": ["operator$string$4"], "postprocess": id},
-    {"name": "operator$string$5", "symbols": [{"literal":">"}, {"literal":"="}], "postprocess": function joiner(d) {return d.join('');}},
-    {"name": "operator", "symbols": ["operator$string$5"], "postprocess": id},
     {"name": "var_assignment", "symbols": ["var_type", "__", "identifier", "_", {"literal":"="}, "_", "expression"], "postprocess": 
         data => {
           return {
@@ -85,19 +68,55 @@ var grammar = {
     {"name": "identifier$ebnf$1", "symbols": [/[a-z]/]},
     {"name": "identifier$ebnf$1", "symbols": ["identifier$ebnf$1", /[a-z]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "identifier", "symbols": ["identifier$ebnf$1"], "postprocess": id},
+    {"name": "operator", "symbols": [{"literal":"+"}], "postprocess": id},
+    {"name": "operator", "symbols": [{"literal":"-"}], "postprocess": id},
+    {"name": "operator", "symbols": [{"literal":"*"}], "postprocess": id},
+    {"name": "operator", "symbols": [{"literal":"/"}], "postprocess": id},
+    {"name": "operator", "symbols": [{"literal":"%"}], "postprocess": id},
+    {"name": "operator$string$1", "symbols": [{"literal":"*"}, {"literal":"*"}], "postprocess": function joiner(d) {return d.join('');}},
+    {"name": "operator", "symbols": ["operator$string$1"], "postprocess": id},
+    {"name": "operator$string$2", "symbols": [{"literal":"="}, {"literal":"="}], "postprocess": function joiner(d) {return d.join('');}},
+    {"name": "operator", "symbols": ["operator$string$2"], "postprocess": id},
+    {"name": "operator$string$3", "symbols": [{"literal":"!"}, {"literal":"="}], "postprocess": function joiner(d) {return d.join('');}},
+    {"name": "operator", "symbols": ["operator$string$3"], "postprocess": id},
+    {"name": "operator", "symbols": [{"literal":"<"}], "postprocess": id},
+    {"name": "operator", "symbols": [{"literal":">"}], "postprocess": id},
+    {"name": "operator$string$4", "symbols": [{"literal":"<"}, {"literal":"="}], "postprocess": function joiner(d) {return d.join('');}},
+    {"name": "operator", "symbols": ["operator$string$4"], "postprocess": id},
+    {"name": "operator$string$5", "symbols": [{"literal":">"}, {"literal":"="}], "postprocess": function joiner(d) {return d.join('');}},
+    {"name": "operator", "symbols": ["operator$string$5"], "postprocess": id},
+    {"name": "object", "symbols": ["simple_object"]},
+    {"name": "object", "symbols": ["complex_object"]},
+    {"name": "complex_object", "symbols": ["array"]},
+    {"name": "complex_object", "symbols": ["dictionnary"]},
+    {"name": "dictionnary", "symbols": [{"literal":"{"}, {"literal":"}"}]},
+    {"name": "array", "symbols": [{"literal":"["}, {"literal":"]"}]},
+    {"name": "array", "symbols": [{"literal":"["}, "array_items", {"literal":"]"}]},
+    {"name": "array_items", "symbols": ["simple_object"]},
+    {"name": "array_items", "symbols": ["simple_object", {"literal":","}, "array_items"]},
+    {"name": "simple_object", "symbols": ["number"]},
+    {"name": "simple_object", "symbols": ["boolean"]},
+    {"name": "simple_object", "symbols": ["myNull"]},
+    {"name": "simple_object", "symbols": ["string"]},
+    {"name": "string$ebnf$1", "symbols": ["character"]},
+    {"name": "string$ebnf$1", "symbols": ["string$ebnf$1", "character"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "string", "symbols": [{"literal":"\""}, "string$ebnf$1", {"literal":"\""}]},
+    {"name": "character", "symbols": [/[^\"]/]},
+    {"name": "myNull$string$1", "symbols": [{"literal":"n"}, {"literal":"u"}, {"literal":"l"}, {"literal":"l"}], "postprocess": function joiner(d) {return d.join('');}},
+    {"name": "myNull", "symbols": ["myNull$string$1"]},
+    {"name": "boolean$string$1", "symbols": [{"literal":"t"}, {"literal":"r"}, {"literal":"u"}, {"literal":"e"}], "postprocess": function joiner(d) {return d.join('');}},
+    {"name": "boolean", "symbols": ["boolean$string$1"], "postprocess": () => true},
+    {"name": "boolean$string$2", "symbols": [{"literal":"f"}, {"literal":"a"}, {"literal":"l"}, {"literal":"s"}, {"literal":"e"}], "postprocess": function joiner(d) {return d.join('');}},
+    {"name": "boolean", "symbols": ["boolean$string$2"], "postprocess": () => false},
     {"name": "number", "symbols": ["integer"], "postprocess": id},
     {"name": "number", "symbols": ["float"], "postprocess": id},
-    {"name": "float", "symbols": ["integer", {"literal":"."}, "integer"], "postprocess": 
-        data => Number(data[0] + "." + data[2]) 
-          },
-    {"name": "integer", "symbols": ["digits"], "postprocess":  
-        data => Number(data[0])
-         },
-    {"name": "digits$ebnf$1", "symbols": [/[0-9]/]},
-    {"name": "digits$ebnf$1", "symbols": ["digits$ebnf$1", /[0-9]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "digits", "symbols": ["digits$ebnf$1"], "postprocess": 
+    {"name": "float", "symbols": ["integer", {"literal":"."}, "integer"]},
+    {"name": "integer$ebnf$1", "symbols": ["digit"]},
+    {"name": "integer$ebnf$1", "symbols": ["integer$ebnf$1", "digit"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "integer", "symbols": ["integer$ebnf$1"], "postprocess":  
         data => data[0].join("")
           },
+    {"name": "digit", "symbols": [/[0-9]/]},
     {"name": "_$ebnf$1", "symbols": []},
     {"name": "_$ebnf$1", "symbols": ["_$ebnf$1", /[ ]/], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "_", "symbols": ["_$ebnf$1"]},
